@@ -124,6 +124,10 @@ class ServerInstance:
             self.players = int(self.players or 0)
         except Exception:
             self.players = 0
+
+    def get_protected_commands(self):
+        """Returns a list of protected commands as defined in the instance's config"""
+        return self.config.get("security.protected_commands.commands")
  
     def executeCommand(self, command: str) -> str:
         """

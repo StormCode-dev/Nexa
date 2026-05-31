@@ -27,7 +27,7 @@ logger = nexaLoggerFactory.get_logger("DiscordBot")
 
 
 # I really should move this to a better place.
-VERSION = "Nexa v0.2.0-beta"
+VERSION = "Nexa v0.2.1-beta"
 
 # ---------------------------------------------------------------------------
 # UI Primitives
@@ -518,6 +518,14 @@ class SuperUserCog(commands.Cog):
         if not tgt:
             await interaction.response.send_message(f"Instance `{instance}` not found.", ephemeral=True)
             return
+        
+        # Check if command is protected
+        
+        cleanedCmd = command.lstrip("/")
+        protected_cmds = tgt.get_protected_commands() or []
+        if cleanedCmd.split()[0] in protected_cmds:
+            await interaction.response.send_message(f"Command `{cleanedCmd.split()[0]}` is protected and cannot be executed through this interface.", ephemeral=True)
+            return
 
         try:
             loop = asyncio.get_running_loop()
@@ -879,7 +887,8 @@ class NexaBot(commands.Bot):
         *,
         registry: NexaInstanceRegistry | str | None = None,
         config: NexaConfig | str | None = None,
-        statusChannelID: int | None = None
+        statusChannelID: int | None = None,
+        nexaUpdateStatus: int,
     ):
         intents = discord.Intents.default()
         intents.message_content = False
@@ -887,6 +896,7 @@ class NexaBot(commands.Bot):
 
         self.token_str = token
         self.instance_manager = instance_manager
+        self.nexaUpdateStatus = nexaUpdateStatus
 
         # Config
         self.config = config if isinstance(config, NexaConfig) else NexaConfig(
@@ -1064,9 +1074,15 @@ class NexaBot(commands.Bot):
 
         await self.instance_manager.start()
 
+        presenceName = ""
+        if self.nexaUpdateStatus == 1:
+            presenceName = f"{VERSION} (Update Available!)"
+        else:
+            presenceName = f"{VERSION}"
+
         await self.change_presence(
             status=discord.Status.online,
-            activity=discord.Activity(type=discord.ActivityType.playing, name=VERSION)
+            activity=discord.Activity(type=discord.ActivityType.playing, name=presenceName)
         )
 
         asyncio.create_task(self._live_status_loop())

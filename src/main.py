@@ -3,6 +3,7 @@
 # PLEASE don't modify unless strcitly necessary!
 
 import os
+import requests
 import subprocess
 import sys
 from pathlib import Path
@@ -19,6 +20,31 @@ from services.nexaConfig import NexaConfig, NexaInstanceRegistry
 config = NexaConfig("NexaBotConfig.yaml")
 registry = NexaInstanceRegistry("NexaInstanceRegistry.yaml")
 
+currentNexaVersion = "0.2.1" # This should be updated with every release. Please do not touch it if a release is not being made.
+whereIsThatSillyUpdateIndex = "https://raw.githubusercontent.com/StormCode-dev/Nexa/refs/heads/main/updateIndex.json" # This should point to a raw JSON file in the repo with the latest version info. 
+# Please do not touch it. It points to the main branch, which is the correct branch.
+
+def check_for_updates():
+    try:
+        response = requests.get(whereIsThatSillyUpdateIndex, timeout=5)
+        response.raise_for_status()
+        data = response.json()
+        latest = data["latestNexaVersion"]
+
+        if currentNexaVersion != latest:
+            print(f"[Nexa] Update available: {currentNexaVersion} → {latest}")
+            return 1
+        else:
+            print(f"[Nexa] Up to date ({currentNexaVersion})")
+            return 0
+
+    except requests.exceptions.RequestException as e:
+        print(f"[Nexa] Update check failed: {e}")
+        return -1
+    except (KeyError, ValueError) as e:
+        print(f"[Nexa] Malformed update index: {e}")
+        return -1
+    
 
 def build_folder_for_instance(instances_root: Path, instance_name: str, instance_cfg: dict) -> str:
     """
@@ -63,6 +89,16 @@ def main():
     nexaLoggerFactory.setup(config)
     logger = nexaLoggerFactory.get_logger("Main")
     logger.info("Nexa is starting.")
+
+    logger.info("Checking for updates...")
+    update_status = check_for_updates()
+
+    if update_status == 1:
+        logger.warning("A new version of Nexa is available! Please check the GitHub repository for updates.")
+    elif update_status == -1:
+        logger.warning("Could not check for updates.")
+    else:
+        logger.info("Nexa is up to date.")
 
     if config.get("security.useOverrides", False):
         load_overrides()
@@ -148,7 +184,7 @@ def main():
 
     # Start Discord bot IF enabled in config
     if config.get("discord.enable", False):
-        bot = NexaBot(token=token, instance_manager=manager, registry=registry, config=config, statusChannelID=config.get("discord.statusChannelID", None))
+        bot = NexaBot(token=token, instance_manager=manager, registry=registry, config=config, statusChannelID=config.get("discord.statusChannelID", None), nexaUpdateStatus=update_status)
         bot.start_bot()
         logger.info("Discord bot started.")
 

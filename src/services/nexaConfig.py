@@ -37,6 +37,9 @@ class NexaConfig:
             "skipLoadingAppsWithBlacklistedCapabilities": True,
             "shadowZoneApps": True,
             "useOverrides": False,
+            "enableServerOperators": False,
+            "serverOperators": [],
+            "allowNexaDesktop": False,
         },
         "networking": {
             "usePlayIt": True,
@@ -82,6 +85,9 @@ class NexaConfig:
             "skipLoadingAppsWithBlacklistedCapabilities": bool,
             "shadowZoneApps": bool,
             "useOverrides": bool,
+            "enableServerOperators": bool,
+            "serverOperators": list,
+            "allowNexaDesktop": bool,
         },
         "networking": {
             "usePlayIt": bool,
@@ -386,6 +392,7 @@ class NexaInstanceConfig:
                     "kick",
                     "ban",
                     "op",
+                    "deop",
                     "stop",
                     "execute",
                 ],
