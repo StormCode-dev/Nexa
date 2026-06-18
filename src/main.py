@@ -90,8 +90,11 @@ def load_overrides():
     except FileNotFoundError:
         print("No nxoverrides.dat file found, skipping overrides.")
 
-
-
+def get_self_path() -> str:
+    """Returns the path to the current executable, whether frozen or running as a script."""
+    if getattr(sys, "frozen", False):
+        return sys.executable  # Compiled onefile executable
+    return sys.executable + " " + __file__  # Running as a script
 
 def main():
     # Early safety check & setup
@@ -121,7 +124,11 @@ def main():
         logger.info("Starting Nexa in watchdog mode...")
         first_spawn = True
         while True:
-            cmd = [sys.executable, __file__, "--isSpawnedProc"]
+            if getattr(sys, "frozen", False):
+                cmd = [sys.executable, "--isSpawnedProc"]
+            else:
+                cmd = [sys.executable, __file__, "--isSpawnedProc"]
+                
             if not first_spawn:
                 cmd.append("--resurrected")
 

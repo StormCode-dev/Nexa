@@ -27,7 +27,7 @@ from .cogs.superuser import SuperUserCog
 
 logger = nexaLoggerFactory.get_logger("DiscordBot")
 
-VERSION = "Nexa v0.2.1-beta"
+VERSION = "Nexa v0.2.2-beta"
 
 
 class NexaBot(commands.Bot):

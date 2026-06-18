@@ -1,6 +1,9 @@
 # discordBot.py
 # Under the MIT License.
 
+# This file has now been deprecated in favor of a cleaner, more modular structure.
+# The new entry point is discordBot.py. This file is kept for reference and will be removed in a future release.
+
 import os
 import json
 import asyncio
@@ -27,7 +30,7 @@ logger = nexaLoggerFactory.get_logger("DiscordBot")
 
 
 # I really should move this to a better place.
-VERSION = "Nexa v0.2.1-beta"
+VERSION = "Nexa v0.2.2-beta"
 
 # ---------------------------------------------------------------------------
 # UI Primitives

@@ -77,7 +77,7 @@ general:
   configVersion: 1
 discord:
   enable: true
-  preventRandomPeopelFromStoppingInstances: true
+  preventRandomPeopleFromStoppingInstances: true
   lockToAuthorizedGuild: false
   authorizedGuilds: []
   statusChannelID: 0
