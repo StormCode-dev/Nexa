@@ -42,18 +42,21 @@ jobs:
           if (Test-Path "requirements.txt") {
             pip install -r requirements.txt
           }
-          pip install nuitka psutil
+          pip install nuitka
 
       - name: Build with Nuitka
         shell: pwsh
         run: |
-          python -m nuitka `
-            --onefile `
-            --output-filename=Nexa.exe `
-            --output-dir=dist `
-            --assume-yes-for-downloads `
-            --include-package=psutil `
-            src/main.py
+          $pkgs = @()
+          if (Test-Path "requirements.txt") {
+            $pkgs = Get-Content "requirements.txt" |
+              Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*#' } |
+              ForEach-Object { ($_ -split '[>=<!;]')[0].Trim() }
+          }
+          $includeArgs = ($pkgs | ForEach-Object { "--include-package=$_" }) -join " "
+          $cmd = "python -m nuitka --onefile --output-filename=Nexa.exe --output-dir=dist --assume-yes-for-downloads --follow-imports $includeArgs src/main.py"
+          Write-Host "Running: $cmd"
+          Invoke-Expression $cmd
 
       - name: Verify build output
         shell: pwsh
@@ -85,3 +88,4 @@ jobs:
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
