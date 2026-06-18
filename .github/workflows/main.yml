@@ -47,21 +47,35 @@ jobs:
       - name: Build with Nuitka
         shell: pwsh
         run: |
+          $nameMap = @{
+            "discord.py"      = "discord"
+            "PyYAML"          = "yaml"
+            "pycryptodome"    = "Crypto"
+            "audioop-lts"     = "audioop"
+            "charset-normalizer" = "charset_normalizer"
+          }
+          $skip = @("Nuitka", "nuitka")
+          $exeName = "nexa-${{ steps.version.outputs.version }}.exe"
           $pkgs = @()
           if (Test-Path "requirements.txt") {
             $pkgs = Get-Content "requirements.txt" |
               Where-Object { $_ -match '\S' -and $_ -notmatch '^\s*#' } |
-              ForEach-Object { ($_ -split '[>=<!;]')[0].Trim() }
+              ForEach-Object { ($_ -split '[>=<!;]')[0].Trim() } |
+              Where-Object { $_ -notin $skip }
           }
-          $includeArgs = ($pkgs | ForEach-Object { "--include-package=$_" }) -join " "
-          $cmd = "python -m nuitka --onefile --output-filename=Nexa.exe --output-dir=dist --assume-yes-for-downloads --follow-imports $includeArgs src/main.py"
+          $includeArgs = ($pkgs | ForEach-Object {
+            $mapped = if ($nameMap.ContainsKey($_)) { $nameMap[$_] } else { $_ }
+            "--include-package=$mapped"
+          }) -join " "
+          $cmd = "python -m nuitka --onefile --output-filename=$exeName --output-dir=dist --assume-yes-for-downloads $includeArgs src/main.py"
           Write-Host "Running: $cmd"
           Invoke-Expression $cmd
 
       - name: Verify build output
         shell: pwsh
         run: |
-          $exe = "dist\Nexa.exe"
+          $exeName = "nexa-${{ steps.version.outputs.version }}.exe"
+          $exe = "dist\$exeName"
           if (-not (Test-Path $exe)) {
             Write-Error "Build failed – $exe not found."
             exit 1
@@ -71,8 +85,8 @@ jobs:
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Nexa-windows-${{ steps.version.outputs.version }}
-          path: dist/Nexa.exe
+          name: nexa-${{ steps.version.outputs.version }}-windows
+          path: dist/nexa-${{ steps.version.outputs.version }}.exe
           retention-days: 30
 
       - name: Publish GitHub Release
@@ -83,9 +97,8 @@ jobs:
           name: Release ${{ steps.version.outputs.tag }}
           body_path: .github/RELEASE_NOTES.md
           draft: false
-          prerelease: false
-          files: dist/Nexa.exe
+          prerelease: true
+          files: dist/nexa-${{ steps.version.outputs.version }}.exe
           fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
