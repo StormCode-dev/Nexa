@@ -42,15 +42,16 @@ jobs:
           if (Test-Path "requirements.txt") {
             pip install -r requirements.txt
           }
-          pip install pyinstaller
+          pip install nuitka
 
-      - name: Build with PyInstaller
+      - name: Build with Nuitka
         shell: pwsh
         run: |
-          pyinstaller `
+          python -m nuitka `
             --onefile `
-            --name "Nexa" `
-            --clean `
+            --output-filename=Nexa.exe `
+            --output-dir=dist `
+            --assume-yes-for-downloads `
             src/main.py
 
       - name: Verify build output
