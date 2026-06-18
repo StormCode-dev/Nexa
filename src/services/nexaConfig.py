@@ -21,22 +21,12 @@ class NexaConfig:
             "lockToAuthorizedGuild": False,
             "authorizedGuilds": [],
             "statusChannelID": 0,
+            "healthIssuesChannelID": 0,
             "updateInterval": 30,
             "enableSuperUsers": False,
             "superUsers": [],
         },
         "security": {
-            "enableGatekeeper": True,
-            "blacklistedCapabilities": [
-                "nexus.decontainerize",
-                "nexus.loadInstance",
-                "nexus.unloadInstance",
-                "nexus.accessCoreDB",
-                "nexabot.core.subprocesses",
-            ],
-            "skipLoadingAppsWithBlacklistedCapabilities": True,
-            "shadowZoneApps": True,
-            "useOverrides": False,
             "enableServerOperators": False,
             "serverOperators": [],
             "allowNexaDesktop": False,
@@ -59,6 +49,12 @@ class NexaConfig:
         },
         "automaticModpackBootstrapper": {
             "strictModVerification": True,
+        },
+        "serverHealthManagement":{
+            "keepNexaAlive": True,
+            "keepAliveIntervalInSecs": 60,
+            "keepPlayItAlive": True,
+            "updateCheckIntervalInMins": 15,
         }
     }
 
@@ -75,16 +71,12 @@ class NexaConfig:
             "lockToAuthorizedGuild": bool,
             "authorizedGuilds": list,
             "statusChannelID": int,
+            "healthIssuesChannelID": int,
             "updateInterval": int,
             "enableSuperUsers": bool,
             "superUsers": list,
         },
         "security": {
-            "enableGatekeeper": bool,
-            "blacklistedCapabilities": list,
-            "skipLoadingAppsWithBlacklistedCapabilities": bool,
-            "shadowZoneApps": bool,
-            "useOverrides": bool,
             "enableServerOperators": bool,
             "serverOperators": list,
             "allowNexaDesktop": bool,
@@ -102,6 +94,12 @@ class NexaConfig:
         },
         "automaticModpackBootstrapper": {
             "strictModVerification": bool,
+        },
+        "serverHealthManagement": {
+            "keepNexaAlive": bool,
+            "keepAliveIntervalInSecs": int,
+            "keepPlayItAlive": bool,
+            "updateCheckIntervalInMins": int,
         },
     }
 
@@ -153,10 +151,12 @@ class NexaConfig:
                 if self._mergeDefaults(data[key], value):
                     changed = True
 
-        # Reject unknown keys
+        # Remove unknown keys
         for key in list(data.keys()):
             if key not in defaults:
-                raise KeyError(f"Unknown configuration key: {key}")
+                # raise KeyError(f"Unknown configuration key: {key}")
+                del data[key]
+                changed = True
 
         return changed
 
@@ -245,7 +245,7 @@ class NexaInstanceRegistry:
         "loaderType": "",
         "icon_url": "",
         "folder": "",
-        "enableNexusMods": False,
+        "enableAutomations": False,
     }
 
     EXPECTED_TYPES = {
@@ -254,7 +254,7 @@ class NexaInstanceRegistry:
         "loaderType": str,
         "icon_url": str,
         "folder": str,
-        "enableNexusMods": bool,
+        "enableAutomations": bool,
     }
 
     def __init__(self, intendedPath: str, createIfMissing: bool = True):
@@ -472,10 +472,12 @@ class NexaInstanceConfig:
                 if self._mergeDefaults(data[key], value):
                     changed = True
 
-        # Reject unknown keys
+        # Remove unknown keys
         for key in list(data.keys()):
             if key not in defaults:
-                raise KeyError(f"Unknown configuration key in instance config: {key}")
+                # raise KeyError(f"Unknown configuration key in instance config: {key}")
+                del data[key]
+                changed = True
 
         return changed
 

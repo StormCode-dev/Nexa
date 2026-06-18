@@ -1,5 +1,8 @@
-# discordBotV2.py
+# discordBot.py
 # Under the MIT License.
+
+# This file has now been deprecated in favor of a cleaner, more modular structure.
+# The new entry point is discordBot.py. This file is kept for reference and will be removed in a future release.
 
 import os
 import json
@@ -27,7 +30,7 @@ logger = nexaLoggerFactory.get_logger("DiscordBot")
 
 
 # I really should move this to a better place.
-VERSION = "Nexa v0.2.1-beta"
+VERSION = "Nexa v0.2.2-beta"
 
 # ---------------------------------------------------------------------------
 # UI Primitives
@@ -656,7 +659,7 @@ class SuperUserCog(commands.Cog):
         install_msg: Optional[discord.Message] = None
 
         await interaction.response.send_message(
-            f"🚀 Starting modpack installation for `{instance}`…", ephemeral=True
+            f"Starting modpack installation for `{instance}`…", ephemeral=True
         )
 
         if channel:
@@ -700,7 +703,7 @@ class SuperUserCog(commands.Cog):
                         shutdown_cancelled = True
                         self.bot.instance_manager.cancel_shutdown(instance)
                         await btn_interaction.response.send_message(
-                            "✅ Shutdown cancelled. Install aborted.", ephemeral=True
+                            "Shutdown cancelled. Install aborted.", ephemeral=True
                         )
                         await install_msg.edit(
                             embed=_build_embed("🛑 Install cancelled by operator.", failed=True),

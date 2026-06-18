@@ -77,24 +77,18 @@ general:
   configVersion: 1
 discord:
   enable: true
-  preventRandomPeopelFromStoppingInstances: true
+  preventRandomPeopleFromStoppingInstances: true
   lockToAuthorizedGuild: false
   authorizedGuilds: []
   statusChannelID: 0
+  healthIssuesChannelID: 0
   updateInterval: 30
   enableSuperUsers: false
   superUsers: []
 security:
-  enableGatekeeper: true
-  blacklistedCapabilities:
-  - nexus.decontainerize
-  - nexus.loadInstance
-  - nexus.unloadInstance
-  - nexus.accessCoreDB
-  - nexabot.core.subprocesses
-  skipLoadingAppsWithBlacklistedCapabilities: true
-  shadowZoneApps: true
-  useOverrides: false
+  enableServerOperators: false
+  serverOperators: []
+  allowNexaDesktop: false
 networking:
   usePlayIt: true
 logging:
@@ -110,6 +104,12 @@ logging:
     config: WARNING
 automaticModpackBootstrapper:
   strictModVerification: true
+serverHealthManagement:
+  keepNexaAlive: true
+  keepAliveIntervalInSecs: 60
+  keepPlayItAlive: true
+  updateCheckIntervalInMins: 15
+
 ```
 
 and

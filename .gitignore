@@ -196,6 +196,8 @@ staging/
 src/main.build
 src/main.dist
 src/main.onefile-build
+dist/
+build/
 
 # Ignore the hateful EXEs, in case I'm an idiot.
 *.exe

@@ -1,3 +1,0 @@
-Nexus was shelved until the project got to MVP. Right now, Nexa is not MVP. I may resume work on this soon.
-
-Please do not try and integrate Nexus into the code. I will get around to it soon and properly name it something that isn't confusing.

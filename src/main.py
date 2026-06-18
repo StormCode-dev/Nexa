@@ -2,17 +2,22 @@
 # Under the MIT License.
 # PLEASE don't modify unless strcitly necessary!
 
+import psutil
 import os
 import requests
 import subprocess
 import sys
 from pathlib import Path
-from discord.discordBotV2 import NexaBot
+from bot.discordBot import NexaBot
 from backend.instanceManager import InstanceManager, ServerInstance, ServerStatus
 from services.nexaDB import unprotectedDB, protectedDB
 from services import nexaLoggerFactory
-
 from ensureStability import checkIfAbleToRun
+import argparse
+
+# Capture the real executable path before anything else runs.
+# sys.argv[0] always points to the original .exe or script, never the temp extraction dir.
+SELF_PATH = os.path.abspath(sys.argv[0])
 
 # Load Config
 from services.nexaConfig import NexaConfig, NexaInstanceRegistry
@@ -20,7 +25,7 @@ from services.nexaConfig import NexaConfig, NexaInstanceRegistry
 config = NexaConfig("NexaBotConfig.yaml")
 registry = NexaInstanceRegistry("NexaInstanceRegistry.yaml")
 
-currentNexaVersion = "0.2.1" # This should be updated with every release. Please do not touch it if a release is not being made.
+currentNexaVersion = "0.2.2" # This should be updated with every release. Please do not touch it if a release is not being made.
 whereIsThatSillyUpdateIndex = "https://raw.githubusercontent.com/StormCode-dev/Nexa/refs/heads/main/updateIndex.json" # This should point to a raw JSON file in the repo with the latest version info. 
 # Please do not touch it. It points to the main branch, which is the correct branch.
 
@@ -45,6 +50,14 @@ def check_for_updates():
         print(f"[Nexa] Malformed update index: {e}")
         return -1
     
+def is_playit_running() -> bool:
+    for proc in psutil.process_iter(["name"]):
+        try:
+            if "playit" in proc.info["name"].lower():
+                return True
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    return False
 
 def build_folder_for_instance(instances_root: Path, instance_name: str, instance_cfg: dict) -> str:
     """
@@ -81,14 +94,53 @@ def load_overrides():
     except FileNotFoundError:
         print("No nxoverrides.dat file found, skipping overrides.")
 
-
 def main():
-    # Early safety check
+    # Early safety check & setup
     checkIfAbleToRun(config)
-    # Setup logging
-    nexaLoggerFactory.setup(config)
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--isSpawnedProc", action="store_true", help="Run as a spawned process (internal use only)")
+    parser.add_argument("--resurrected", action="store_true", help="Indicates this process was restarted after a crash (internal use only)")
+    args = parser.parse_args()
+
+    nexaLoggerFactory.setup(config, is_daemon=args.isSpawnedProc)
     logger = nexaLoggerFactory.get_logger("Main")
-    logger.info("Nexa is starting.")
+
+    def kill_orphaned_java():
+        for proc in psutil.process_iter(["name", "pid"]):
+            try:
+                if any(jvm in proc.info["name"].lower() for jvm in ("java", "javaw", "openjdk")):
+                    logger.info(f"Killing orphaned JVM process: {proc.info['name']} (PID {proc.info['pid']})")
+                    proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                logger.warning(f"Could not kill JVM process (PID {proc.info['pid']}): {e}")
+
+    if config.get("serverHealthManagement", {}).get("keepNexaAlive", False) and not args.isSpawnedProc:
+        logger.info("Starting Nexa in watchdog mode...")
+        first_spawn = True
+        while True:
+            if SELF_PATH.endswith(".exe"):
+                cmd = [SELF_PATH, "--isSpawnedProc"]
+            else:
+                cmd = [sys.executable, SELF_PATH, "--isSpawnedProc"]
+            
+            if not first_spawn:
+                cmd.append("--resurrected")
+
+            process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            first_spawn = False
+
+            stdout, stderr = process.communicate()
+            if process.returncode == 0:
+                logger.info("[Nexa Watchdog] Nexa exited normally. Restarting...")
+            else:
+                logger.error(f"[Nexa Watchdog] Nexa crashed with exit code {process.returncode}. Restarting...")
+                logger.debug(f"[Nexa Watchdog] Stdout: {stdout.decode()}")
+                logger.debug(f"[Nexa Watchdog] Stderr: {stderr.decode()}")
+
+    logger.info("Nexa is starting as the actual proccess.")
+
+    kill_orphaned_java()  # Clean up any leftover Java processes from previous runs before starting
 
     logger.info("Checking for updates...")
     update_status = check_for_updates()
@@ -111,8 +163,7 @@ def main():
 
     # Check if networking allows PlayIt
     use_playit = config.get("networking.usePlayIt", False)
-    if use_playit:
-        # Subproc call to start PlayIt client (assuming it's installed and in PATH)
+    if use_playit and not is_playit_running():
         try:
             subprocess.Popen(["playit"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
             print("Started PlayIt client.")
@@ -132,7 +183,6 @@ def main():
     try:
         instance_names = registry.list_instances()
     except Exception:
-        # defensive fallback if registry implementation differs
         instance_names = list((registry._data.get("instances") or {}).keys()) if getattr(registry, "_data", None) else []
 
     if instance_names:
@@ -141,11 +191,9 @@ def main():
                 inst_cfg = registry.get_instance(name) or {}
                 folder = build_folder_for_instance(instances_root, name, inst_cfg)
                 version = inst_cfg.get("version", "")
-                # registry uses 'loaderType' in samples. Fall back to 'loader' if present
                 loader = inst_cfg.get("loaderType") or inst_cfg.get("loader") or ""
                 icon_url = inst_cfg.get("icon_url") or inst_cfg.get("icon") or None
 
-                # Create ServerInstance the same way your mock did.
                 manager.add_instance(ServerInstance(
                     name=name,
                     folder=folder,
@@ -155,11 +203,8 @@ def main():
                 ))
                 logger.info(f"Registered instance '{name}' -> folder={folder}")
             except Exception as e:
-                # Don't crash entirely if one instance is malformed
-                #print(f"Failed to register instance '{name}': {e}", file=sys.stderr)
                 logger.error(f"Failed to register instance '{name}': {e}")
     else:
-        # Nothing in registry: attempt to use primaryInstance from NexaConfig as a last resort
         primary = config.get("general.primaryInstance", None)
         if primary:
             try:
@@ -184,7 +229,7 @@ def main():
 
     # Start Discord bot IF enabled in config
     if config.get("discord.enable", False):
-        bot = NexaBot(token=token, instance_manager=manager, registry=registry, config=config, statusChannelID=config.get("discord.statusChannelID", None), nexaUpdateStatus=update_status)
+        bot = NexaBot(token=token, instance_manager=manager, registry=registry, config=config, statusChannelID=config.get("discord.statusChannelID", None), nexaUpdateStatus=update_status, isResurrected=args.resurrected)
         bot.start_bot()
         logger.info("Discord bot started.")
 
