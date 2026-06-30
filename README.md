@@ -269,13 +269,7 @@ Instances are **NOT TOUCHED** until Nexa has confirmed the modpack install can b
 
 ## Contributing
  
-Contributions are welcome. Please open an issue before submitting a pull request for any significant change.
- 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes
-4. Open a pull request against `main`
-Bug reports and feature requests can be filed as GitHub Issues.
+Contributions are welcome. Check CONTRIBUTING.md for more info.
  
 ---
  
