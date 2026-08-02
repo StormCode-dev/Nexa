@@ -30,7 +30,7 @@ from .cogs.operator import OperatorCog
 
 logger = nexaLoggerFactory.get_logger("DiscordBot")
 
-VERSION = "Nexa v0.3.0-beta"
+VERSION = "Nexa v0.3.0-beta-hotfix1"
 
 
 class NexaBot(commands.Bot):
