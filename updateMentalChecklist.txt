@@ -1,7 +1,7 @@
 Update the versioning info here:
 
 src/main.py
-- Line 37, bump currentNexaVersion.
+- Line 38, bump currentNexaVersion.
 
 src/bot/discordBot.py
 - Line 33, update the VERSION string.

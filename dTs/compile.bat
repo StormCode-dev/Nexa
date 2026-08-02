@@ -10,4 +10,5 @@ python -m nuitka ^
   --copyright="Copyright (c) 2026 StormCode & Contributors" ^
   --assume-yes-for-downloads ^
   --follow-imports ^
+  --include-data-files=.venv\Lib\site-packages\pinggy\bin\pinggy.dll=pinggy\bin\pinggy.dll ^
   src/main.py
