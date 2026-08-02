@@ -354,6 +354,8 @@ Contributions are welcome. Check CONTRIBUTING.md for more info.
 ## License
  
 Nexa is licensed under the [MIT License](LICENSE).
+
+Pinggy is bundled automatically with compiled version of Nexa. Pinggy is licensed under Apache 2.0. See [`Pinggy's Apache 2.0 license`](legal/pinggy/LICENSE-pinggy.txt).
  
 ---
  
