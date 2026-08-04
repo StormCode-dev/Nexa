@@ -30,7 +30,7 @@ from .cogs.operator import OperatorCog
 
 logger = nexaLoggerFactory.get_logger("DiscordBot")
 
-VERSION = "Nexa v0.3.0-beta-hotfix1"
+VERSION = "0.3.0-beta.hotfix2"
 
 
 class NexaBot(commands.Bot):
@@ -70,8 +70,8 @@ class NexaBot(commands.Bot):
         )
 
         # Command Config
-        self.cmdConfig = cmdConfig if isinstance(cmdConfig, NexaCmdConfig) else(
-            config if isinstance(cmdConfig, str) else "NexaBotCmdCfg.yaml"
+        self.cmdConfig = cmdConfig if isinstance(cmdConfig, NexaCmdConfig) else NexaCmdConfig(
+            cmdConfig if isinstance(cmdConfig, str) else "NexaBotCmdCfg.yaml"
         )
 
         self.statusChannelID = statusChannelID or self.config.get("discord.statusChannel", None)

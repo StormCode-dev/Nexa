@@ -35,7 +35,7 @@ cmdConfig = NexaCmdConfig("NexaBotCmdCfg.yaml")
 # Protected DB password, guaranteed present by checkIfAbleToRun()
 db_key = os.environ.get("NEXABOT_PROTECTED_KEY")
 
-currentNexaVersion = "0.3.0-beta-hotfix1" # This should be updated with every release. Please do not touch it if a release is not being made.
+currentNexaVersion = "0.3.0-beta.hotfix2" # This should be updated with every release. Please do not touch it if a release is not being made.
 whereIsThatSillyUpdateIndex = "https://raw.githubusercontent.com/StormCode-dev/Nexa/refs/heads/main/updateIndex.json" # This should point to a raw JSON file in the repo with the latest version info. 
 # Please do not touch it. It points to the main branch, which is the correct branch.
 
