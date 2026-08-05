@@ -16,6 +16,7 @@ Nexa is a Discord-integrated Minecraft Java server management system. It allows 
 - **User data management**: Protect user data with encrypted storage. Allows for the management of your data, as well as everybody elses.
 - **Guild Authorization**: Set up guilds in which the bot will only work in. Great layer of security.
 
+To view upcoming features, you can look at [ROADMAP.md](ROADMAP.md) to get an idea of what to expect next.
 ---
 
 ## Requirements:
