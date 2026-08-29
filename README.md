@@ -51,7 +51,7 @@ Nexa requires a few things before it can actually start, all of which are checke
 Regardless of OS, register the following in your Environment Variables.
 
 BOT_TOKEN=keyForYourDiscordApplication
-NEXA_PROTECTED_KEY=aLargeAlphanumericString
+NEXABOT_PROTECTED_KEY=aLargeAlphanumericString
 
 Note that the format is {name of the variable}={contents of said variable}.
 
