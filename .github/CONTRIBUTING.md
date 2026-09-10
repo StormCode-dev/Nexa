@@ -17,7 +17,7 @@ Nexa will also check the Java version. This is always updated to be the latest L
 4. Fill in your environment variables Nexa requires. The following are required:
 ```
 BOT_TOKEN=<a-token-for-your-discord-bot-goes-here> 
-NEXA_PROTECTED_KEY=<put-your-own-32-char-key-here>
+NEXABOT_PROTECTED_KEY=<put-your-own-32-char-key-here>
 ```
 
 When you commit, PLEASE make sure you don't hardcode any of these values in, for your own safety.
