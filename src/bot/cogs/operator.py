@@ -970,6 +970,10 @@ class OperatorCog(commands.Cog):
             return
 
         cleanedCmd = command.lstrip("/")
+        if not cleanedCmd.strip():
+            await responder.send("Command is empty. Command cannot be empty.", ephemeral=True)
+            return
+
         protected_cmds = tgt.get_protected_commands() or []
         if cleanedCmd.split()[0] in protected_cmds:
             await responder.send(
@@ -979,8 +983,7 @@ class OperatorCog(commands.Cog):
             return
 
         try:
-            loop = asyncio.get_running_loop()
-            response = await loop.run_in_executor(None, tgt.executeCommand, command)
+            response = await tgt.executeCommand(command)
             embed = discord.Embed(
                 title=f"RCON Response: {tgt.name}",
                 description=f"**Command:** `{command}`\n**Response:**\n```{response}```",
