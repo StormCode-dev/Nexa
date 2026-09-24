@@ -394,6 +394,7 @@ class InstanceManager:
                         new_read_pos = read_pos
 
                     for line in new_lines:
+                        #print(f"new line: {line}")
                         if "Done (" in line:
                             return True
                     read_pos = new_read_pos

@@ -205,3 +205,6 @@ build/
 
 # Ignore those pesky DLLs too, just in case.
 *.dll
+
+# Launch Scripts
+runNexa.sh
