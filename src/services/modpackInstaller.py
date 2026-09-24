@@ -17,6 +17,7 @@ import os
 import stat
  
 import aiohttp
+from aiomcrcon import Client
  
 from backend.instanceManager import InstanceManager, ServerStatus
 from services.nexaConfig import NexaInstanceRegistry, NexaConfig
@@ -488,16 +489,15 @@ class ModpackInstaller:
         # --- Stage 11: Test staged server via RCON ---
         await self._report(InstallStage.TESTING_STAGED, "Waiting for staged server to accept RCON…")
  
-        from mcrcon import MCRcon
         rcon_ok  = False
         timeout  = 300
         elapsed  = 0
  
         while elapsed < timeout:
             try:
-                with MCRcon("127.0.0.1", staged_rcon_password, port=staged_rcon_port, timeout=timeout) as rcon:
+                async with Client("127.0.0.1", staged_rcon_port, staged_rcon_password) as rcon:
                     # Test 1: Basic command to see if RCON is responsive
-                    response = rcon.command("list")
+                    response, _ = await rcon.send_cmd("list", timeout=timeout)
                     if response is not None:
                         rcon_ok = True
                         break
@@ -508,8 +508,8 @@ class ModpackInstaller:
  
         # Stop staged server regardless of outcome
         try:
-            with MCRcon("127.0.0.1", staged_rcon_password, port=staged_rcon_port) as rcon:
-                rcon.command("stop")
+            async with Client("127.0.0.1", staged_rcon_port, staged_rcon_password) as rcon:
+                await rcon.send_cmd("stop")
         except Exception:
             pass
  

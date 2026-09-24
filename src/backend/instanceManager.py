@@ -10,7 +10,7 @@ from backend.configLib import parseConfig, getConfigVal, parseServerProperties
 from backend.serverPropertiesConfig import ServerPropertiesConfig, ensureRconEnabled
 from services.nexaConfig import NexaInstanceConfig, NexaConfig
 from services import nexaLoggerFactory
-from mcrcon import MCRcon
+from aiomcrcon import Client
 import asyncio
 import sys
 import re
@@ -99,10 +99,10 @@ class ServerInstance:
         self.rconPass = self.server_props.get("rcon.password")
         self.rcon_port = int(self.server_props.get("rcon.port"))
 
-    def _get_server_players(self):
+    async def _get_server_players(self):
         try:
-            with MCRcon("127.0.0.1", self.rconPass, port=self.rcon_port) as mcr:
-                response = mcr.command("/list")
+            async with Client("127.0.0.1", self.rcon_port, self.rconPass) as rcon:
+                response, _ = await rcon.send_cmd("/list")
                 #print(f"Raw Response: {response}")
  
                 count_match = re.search(r"There are (\d+) of a max", response)
@@ -116,20 +116,30 @@ class ServerInstance:
         except Exception as e:
             return 0, ""
  
+    # async def refresh_players(self):
+    #     """Run the blocking _get_server_players in a thread and update self.players."""
+    #     try:
+    #         loop = asyncio.get_running_loop()
+    #         count, names = await loop.run_in_executor(None, self._get_server_players)
+    #         #count, names = self._get_server_players()
+    #     except RuntimeError:
+    #         count, names = self._get_server_players()
+ # 
+    #     try:
+    #         self.players = int(count)
+    #     except Exception:
+    #         self.players = 0
+ # 
+    #     #print(f"self.players: {self.players}")
+    #     return self.players, names
+
+
     async def refresh_players(self):
-        """Run the blocking _get_server_players in a thread and update self.players."""
-        try:
-            loop = asyncio.get_running_loop()
-            count, names = await loop.run_in_executor(None, self._get_server_players)
-        except RuntimeError:
-            count, names = self._get_server_players()
- 
-        try:
-            self.players = int(count)
-        except Exception:
-            self.players = 0
- 
-        #print(f"self.players: {self.players}")
+        """Update self.players using the async RCON player query."""
+        
+        count, names = await self._get_server_players()
+        self.players = int(count)
+    
         return self.players, names
  
     async def acquire_status_lock(self, owner: str) -> bool:
@@ -188,7 +198,7 @@ class ServerInstance:
         """Returns a list of protected commands as defined in the instance's config"""
         return self.config.get("security.protected_commands.commands")
  
-    def executeCommand(self, command: str) -> str:
+    async def executeCommand(self, command: str) -> str:
         """
         Sends a raw RCON command to this instance and returns the response string.
         Raises RuntimeError if the instance is not online or RCON fails.
@@ -196,8 +206,9 @@ class ServerInstance:
         if self.status != ServerStatus.ONLINE:
             raise RuntimeError(f"Instance '{self.name}' is not online.")
         try:
-            with MCRcon("127.0.0.1", self.rconPass, port=self.rcon_port) as mcr:
-                return mcr.command(command) or "(no response)"
+            async with Client("127.0.0.1", self.rcon_port, self.rconPass) as rcon:
+                response, _ = await rcon.send_cmd(command)
+                return response or "(no response)"
         except Exception as e:
             raise RuntimeError(f"RCON command failed for '{self.name}': {e}")
  
@@ -284,8 +295,8 @@ class InstanceManager:
             # Attempt graceful shutdown via RCON
             if instance.rconPass and instance.active_process:
                 try:
-                    with MCRcon("localhost", instance.rconPass, port=instance.rcon_port) as rcon:
-                        rcon.command("stop")
+                    async with Client("localhost", instance.rcon_port, instance.rconPass) as rcon:
+                        await rcon.send_cmd("stop")
                 except Exception as e:
                     print(f"[InstanceManager] RCON stop failed: {e}")
 
@@ -383,6 +394,7 @@ class InstanceManager:
                         new_read_pos = read_pos
 
                     for line in new_lines:
+                        #print(f"new line: {line}")
                         if "Done (" in line:
                             return True
                     read_pos = new_read_pos
@@ -421,17 +433,18 @@ class InstanceManager:
 
             # Check players via RCON
             try:
-                with MCRcon("localhost", instance.rconPass, port=instance.rcon_port) as rcon:
-                    response = rcon.command("list") or ""
+                async with Client("localhost", instance.rcon_port, instance.rconPass) as rcon:
+                    response, _ = await rcon.send_cmd("list")
+                    response = response or ""
                     if ":" in response:
                         players_part = response.split(":", 1)[1].strip()
                         players = [n.strip() for n in players_part.split(",") if n.strip()]
                         if players:
                             for p in players:
-                                rcon.command(f"kick {p} {kick_msg}")
+                                await rcon.send_cmd(f"kick {p} {kick_msg}")
                                 print(f"[InstanceManager] Kicked {p} from idle instance")
 
-                            rcon.command("stop")
+                            await rcon.send_cmd("stop")
 
                             if instance.idle_process:
                                 instance.idle_process.terminate()

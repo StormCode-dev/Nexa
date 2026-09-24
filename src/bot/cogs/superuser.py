@@ -48,6 +48,18 @@ class SuperUserCog(commands.Cog):
             if current.lower() in n.lower()
         ]
 
+    async def _resolve_status_message(self) -> Optional[discord.Message]:
+        """Find the most recent bot embed in the status channel."""
+        if not self.bot.statusChannelID:
+            return None
+        channel = self.bot.get_channel(self.bot.statusChannelID)
+        if not channel:
+            return None
+        async for msg in channel.history(limit=10):
+            if msg.author == self.bot.user:
+                return msg
+        return None
+
     # ---------------------------------------------------------------------------
     # Commands
     # ---------------------------------------------------------------------------
